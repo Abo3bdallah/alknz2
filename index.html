@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق الهكر</title>
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تحميل خط Cairo و Fira Code (لإحساس الهكر) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <!-- تحميل مكتبة Lucide للايقونات -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* استخدام خط Cairo كخط أساسي */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #000;
+            color: #0f0; /* أخضر نيون */
+            overflow-x: hidden; /* منع التمرير الأفقي */
+        }
+
+        /* استخدام خط Fira Code للعناصر التي نريدها "هكر" */
+        .font-hacker {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* إخفاء العناصر افتراضيًا */
+        .page {
+            display: none;
+        }
+
+        /* تصميم خانات الإدخال بأسلوب الهكر */
+        .hacker-input {
+            background-color: #111;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.375rem; /* rounded-md */
+            width: 100%;
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+        }
+        .hacker-input::placeholder {
+            color: #0a0;
+            opacity: 0.6;
+        }
+        .hacker-input:focus {
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            border-color: #3f3;
+        }
+
+        /* تصميم الأزرار بأسلوب الهكر */
+        .hacker-btn {
+            background-color: #0f0;
+            color: #000;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        .hacker-btn:hover {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+        }
+        .hacker-btn:disabled {
+            background-color: #333;
+            color: #666;
+            border-color: #444;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        /* تصميم خانات الرمز السري */
+        .pin-input {
+            width: 4rem; /* 64px */
+            height: 5rem; /* 80px */
+            text-align: center;
+            font-size: 2.25rem; /* 36px */
+            background-color: #111;
+            border: 1px solid #0f0;
+            color: #0f0;
+            border-radius: 0.375rem;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+            -moz-appearance: textfield;
+        }
+        .pin-input::-webkit-outer-spin-button,
+        .pin-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* تأثير تحميل الشاشة (Scanlines) */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px;
+            opacity: 0.3;
+            animation: scan 0.1s linear infinite;
+            z-index: 90; /* خلف المودال */
+        }
+
+        @keyframes scan {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 4px; }
+        }
+
+        /* تنسيق الكرات في التحدي */
+        .hacker-ball {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            color: #000;
+            box-shadow: 0 0 15px currentColor;
+        }
+        .hacker-ball:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px currentColor;
+        }
+        .ball-red { background-color: #ff3333; color: #000; border-color: #ff0000; box-shadow: 0 0 10px #ff0000; }
+        .ball-green { background-color: #33ff33; color: #000; border-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .ball-yellow { background-color: #ffff33; color: #000; border-color: #ffff00; box-shadow: 0 0 10px #ffff00; }
+        
+        .ball-solved {
+            background-color: #000 !important;
+            color: #fff !important;
+            border: 2px solid #fff !important;
+            box-shadow: 0 0 10px #fff !important;
+            cursor: default;
+        }
+
+        /* تنسيق لعبة الأسهم والذاكرة */
+        .arrow-display, .memory-cell {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+            background-color: #111;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        /* Memory Game Specifics */
+        .memory-cell {
+            width: 3.5rem; 
+            height: 3.5rem;
+            border-color: #004d00;
+            box-shadow: inset 0 0 5px #002200;
+        }
+        .memory-cell.active {
+            background-color: #0f0;
+            box-shadow: 0 0 15px #0f0;
+            border-color: #fff;
+        }
+        .memory-cell.clicked {
+            background-color: #00aa00;
+        }
+        .memory-cell.error {
+            background-color: #f00;
+            animation: shake 0.3s;
+        }
+
+        /* Arrow Game Specifics */
+        .arrow-display.active {
+            border-color: #0f0;
+            box-shadow: 0 0 10px #0f0;
+            transform: scale(1.1);
+        }
+        .arrow-display.correct {
+            background-color: #0f0;
+            color: #000;
+            border-color: #0f0;
+        }
+        .arrow-display.wrong {
+            background-color: #f00;
+            border-color: #f00;
+            animation: shake 0.5s;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 12px;
+            color: #0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.1s;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.2);
+        }
+        .control-btn:active {
+            background-color: #0f0;
+            color: #000;
+            transform: scale(0.95);
+        }
+
+        /* تنسيق البطاقات الثلاثية الأبعاد */
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            perspective: 1000px;
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .cards-container {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+        .hacker-card {
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #0f0;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+        }
+
+        .hacker-card:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 15px 30px rgba(0, 255, 0, 0.3);
+            border-color: #fff;
+            z-index: 10;
+        }
+
+        .hacker-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .hacker-card:hover::before {
+            left: 100%;
+        }
+
+        .hacker-card h3 {
+            font-family: 'Fira Code', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        .hacker-card p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .hacker-card .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #0f0;
+        }
+
+        /* تنسيق أزرار الخيارات في السؤال الأخير */
+        .option-btn {
+            background-color: #111;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            width: 100%;
+            text-align: right;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #0f0;
+            color: #000;
+            transform: translateX(-5px);
+        }
+        .option-btn.wrong {
+            background-color: #300;
+            border-color: #f00;
+            color: #f00;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        .option-btn.correct {
+            background-color: #0f0;
+            color: #000;
+            border-color: #fff;
+            font-weight: bold;
+            transform: scale(1.02);
+        }
+
+        /* تنسيق خانات الألغاز الجديدة */
+        .puzzle-box {
+            background-color: #0f190f;
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        .puzzle-box.locked {
+            opacity: 0.5;
+            pointer-events: none;
+            border-color: #333;
+            background-color: #0a0a0a;
+        }
+        .puzzle-box.solved {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            background-color: #002200;
+        }
+        .puzzle-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid #0f0;
+            color: #fff;
+            width: 100px;
+            text-align: center;
+            font-size: 1.2rem;
+            outline: none;
+        }
+
+        @keyframes flash-red {
+            0% { background-color: rgba(255, 0, 0, 0); }
+            50% { background-color: rgba(255, 0, 0, 0.3); }
+            100% { background-color: rgba(255, 0, 0, 0); }
+        }
+        .flash-error {
+            animation: flash-red 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- شريط المؤقت الكبير -->
+    <div id="timer-display" class="fixed top-0 left-0 w-full bg-black p-4 z-50 hidden border-b-2 border-green-500 shadow-lg shadow-green-500/30">
+        <div class="flex justify-between items-center max-w-4xl mx-auto px-4">
+            <div class="text-xl">المجموعة: <span id="display-group-name" class="font-hacker text-green-300"></span></div>
+            <div id="time" class="text-5xl font-hacker text-green-400" style="text-shadow: 0 0 10px #0f0;">00:00:00</div>
+            <div class="text-xl">المهكر: <span id="display-hacker-name" class="font-hacker text-green-300"></span></div>
+        </div>
+    </div>
+
+    <!-- نافذة التأكيد (Modal) -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[100] hidden backdrop-blur-sm">
+        <div class="bg-black p-8 rounded-lg shadow-2xl max-w-sm w-full mx-4 text-center border-2 border-green-500 shadow-green-500/50 relative z-[101]">
+            <p id="modal-message" class="text-lg mb-6 text-green-300">هل أنت متأكد؟</p>
+            <div class="flex justify-center gap-4">
+                <button id="modal-no" class="hacker-btn bg-gray-700 text-gray-200 hover:bg-black hover:text-gray-200 border border-gray-500">إلغاء</button>
+                <button id="modal-yes" class="hacker-btn">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة المعلومات (تهكير الكنز) -->
+    <div id="info-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[120] hidden backdrop-blur-sm">
+        <div class="bg-black p-8 rounded-lg shadow-2xl max-w-sm w-full mx-4 text-center border-2 border-green-500 shadow-green-500/50 relative">
+            <h3 class="text-2xl text-green-400 font-hacker mb-4">&gt; SUCCESS &lt;</h3>
+            <p class="text-white text-lg mb-2">كلمة السر:</p>
+            <div class="bg-green-900/30 border border-green-500 p-4 rounded-md mb-4">
+                <p class="text-3xl text-white font-bold font-hacker">تهكير الكنز</p>
+            </div>
+            <p class="text-yellow-400 text-sm font-bold mb-6 animate-pulse">⚠️ ملاحظة: بلغ الفريق فوراً!</p>
+            <button id="btn-info-next" class="hacker-btn w-full">
+                [ انتقل ]
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة تمهيد الجدار الناري -->
+    <div id="pre-firewall-modal" class="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[120] hidden backdrop-blur-sm">
+        <div class="bg-black p-8 rounded-lg shadow-2xl max-w-md w-full mx-4 text-center border-2 border-red-600 shadow-red-600/30 relative animate-pulse">
+            <div class="icon text-red-500 mb-4 flex justify-center">
+                <i data-lucide="alert-triangle" style="width: 64px; height: 64px;"></i>
+            </div>
+            <h3 class="text-3xl text-red-500 font-hacker mb-6">&gt; WARNING &lt;</h3>
+            <p class="text-white text-lg leading-relaxed mb-4">
+                سيدخل الآن على مهمة صعبة. <br>
+                <span class="text-green-400">إن أتممتها ستأخذ وسيلة مساعدة ستساعدك أنت وفريقك.</span>
+            </p>
+            <p class="text-yellow-400 text-lg font-bold mb-8">
+                أبلغ فريقك بهذا الكلام واستعد للمهمة!
+            </p>
+            <button id="btn-start-firewall" class="hacker-btn w-full border-red-500 text-red-500 hover:bg-red-900 hover:text-white">
+                [ أنا مستعد - ابدأ الاختراق ]
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة إدخال إجابة الكرات -->
+    <div id="ball-input-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[110] hidden backdrop-blur-sm">
+        <div class="bg-black p-8 rounded-lg shadow-2xl max-w-sm w-full mx-4 text-center border-2 border-green-500 shadow-green-500/50 relative">
+            <h3 class="text-2xl text-green-400 font-hacker mb-4">&gt; INPUT_CODE</h3>
+            <p class="text-green-300 mb-4 text-sm">أدخل كلمة السر لفك تشفير هذه العقدة</p>
+            
+            <input type="text" id="ball-answer-input" class="hacker-input text-center text-xl mb-4" placeholder="اكتب الإجابة هنا...">
+            
+            <p id="ball-error-msg" class="text-red-500 text-sm mb-4 hidden font-hacker">-- WRONG ANSWER --</p>
+            
+            <div class="flex justify-center gap-4">
+                <button id="btn-cancel-ball" class="hacker-btn bg-red-900 text-white hover:bg-red-800 border-red-500">إلغاء</button>
+                <button id="btn-submit-ball" class="hacker-btn">فحص</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- حاوية الصفحات -->
+    <div class="max-w-xl w-full pt-20">
+
+        <!-- الصفحة 1: تسجيل الدخول -->
+        <div id="page-1" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h1 class="text-4xl font-bold text-green-400 font-hacker" style="text-shadow: 0 0 10px #0f0;">&gt; HACKER_APP_V2.1</h1>
+            <p class="text-green-300">الرجاء إثبات الهوية للوصول للنظام</p>
+            
+            <div class="w-full">
+                <label for="group-name" class="block mb-2 text-sm font-medium text-green-300 font-hacker">&gt; GROUP_ID:</label>
+                <input type="text" id="group-name" class="hacker-input" placeholder="ادخل اسم المجموعة...">
+            </div>
+            
+            <div class="w-full">
+                <label for="group-number" class="block mb-2 text-sm font-medium text-green-300 font-hacker">&gt; GROUP_NO:</label>
+                <select id="group-number" class="hacker-input">
+                    <option value="">اختر رقم المجموعة</option>
+                    <option value="1">المجموعة 1</option>
+                    <option value="2">المجموعة 2</option>
+                    <option value="3">المجموعة 3</option>
+                </select>
+            </div>
+            
+            <div class="w-full">
+                <label for="hacker-name" class="block mb-2 text-sm font-medium text-green-300 font-hacker">&gt; HACKER_ID:</label>
+                <input type="text" id="hacker-name" class="hacker-input" placeholder="ادخل اسمك كمهكر...">
+            </div>
+            
+            <p id="name-error" class="text-red-400 text-sm mt-2 hidden">الرجاء ملء جميع الحقول للبدء</p>
+            
+            <button id="btn-page-1" class="w-full hacker-btn py-4 text-lg">
+                [ بــدايــة ]
+            </button>
+        </div>
+
+        <!-- الصفحة 2: الكلمات الممنوعة -->
+        <div id="page-2" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker" style="text-shadow: 0 0 10px #0f0;">&gt; المهمة: المراقبة</h2>
+            <p class="text-green-300 text-center text-lg font-bold leading-relaxed">
+                لمح لفريقك عن المكان دون ذكر هذه الكلمات <br>
+                <span class="text-red-400 text-sm font-normal block mt-2">(ملاحظة: اذا ذكرت اي كلمة ستزيد من وقت 30 ثانية)</span>
+            </p>
+            
+            <img src="https://i.postimg.cc/Vs3YJFtF/football-pitch-wallpaper-1152x720.jpg" alt="صورة الملعب" class="rounded-lg border-2 border-green-500 shadow-lg w-full h-auto opacity-80 hover:opacity-100 transition-opacity">
+            
+            <div class="w-full p-4 bg-gray-900 border border-green-500 rounded-md relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-green-500 animate-pulse"></div>
+                <ul class="list-disc list-inside text-red-400 text-lg space-y-2 font-hacker" dir="rtl">
+                    <li>هدف</li>
+                    <li>ملعب</li>
+                    <li>لاعب (أو لاعبين)</li>
+                    <li>يركل (أو يشوت)</li>
+                    <li>مباراة</li>
+                    <li>شبكة أو مرمى</li>
+                    <!-- الكلمات الجديدة -->
+                    <li>مستطيل</li>
+                    <li>أخضر</li>
+                    <li>كورة</li>
+                    <li>عشب</li>
+                    <li>انجيلة</li>
+                </ul>
+            </div>
+            
+            <button id="btn-page-2" class="w-full hacker-btn py-4 text-lg">
+                [ وصل الفريق ]
+            </button>
+        </div>
+
+        <!-- الصفحة 3: الرمز السري (4-1-7) -->
+        <div id="page-3" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; فك التشفير: المرحلة 1</h2>
+            <p class="text-green-300 text-center">أخبر الفريق بالكلمات التالية، وادخل الرمز السري:</p>
+            
+            <div class="flex justify-around w-full p-4 bg-gray-900 border border-green-500 rounded-md text-green-300 text-2xl font-hacker">
+                <span>قمع</span>
+                <span>كورة</span>
+                <span>سويتر</span>
+            </div>
+
+            <div class="flex justify-center gap-4" dir="rtl">
+                <input type="number" class="pin-input pin-group-1 font-hacker" maxlength="1">
+                <input type="number" class="pin-input pin-group-1 font-hacker" maxlength="1">
+                <input type="number" class="pin-input pin-group-1 font-hacker" maxlength="1">
+            </div>
+            
+            <p id="pin-error-3" class="text-red-400 text-sm mt-2 hidden font-hacker">--ACCESS DENIED--</p>
+            <button id="btn-lockout-3" class="w-full py-3 bg-red-800 text-white font-hacker rounded-md hidden" disabled>
+                النظام مقفل...
+            </button>
+        </div>
+        
+        <!-- الصفحة 4: الذاكرة الرقمية (Grid Memory) - 4x4 -->
+        <div id="page-4" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; نمط الحماية</h2>
+            <p class="text-green-300 text-center text-sm">احفظ نمط المربعات الخضراء وكرره لفك القفل.</p>
+            
+            <div class="flex justify-between w-full text-xl font-hacker text-green-300 border-b border-green-900 pb-2 mb-2">
+                <div>محاولة: <span id="memory-round">1</span>/3</div>
+                <div id="memory-msg" class="text-yellow-400 text-sm flex items-center">جاهز...</div>
+            </div>
+
+            <!-- شبكة الذاكرة 4 في 4 -->
+            <div id="memory-grid" class="grid grid-cols-4 gap-3 my-2">
+                <!-- يتم توليد المربعات هنا -->
+            </div>
+
+            <button id="btn-start-memory" class="w-full hacker-btn py-2 mt-4">
+                [ ابدأ المسح ]
+            </button>
+        </div>
+
+        <!-- الصفحة 5: تحدي الكور -->
+        <div id="page-5" class="page flex flex-col items-center gap-8 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; تحدي الكور</h2>
+            <p class="text-green-300 text-center text-sm">اضغط على كل كرة لفك تشفيرها واكتشاف الرقم المخفي</p>
+            
+            <div class="flex justify-center items-center gap-6 flex-wrap">
+                <!-- كرة حمراء -->
+                <div id="ball-red" class="hacker-ball ball-red" onclick="openBallModal('red')">?</div>
+                <!-- كرة خضراء -->
+                <div id="ball-green" class="hacker-ball ball-green" onclick="openBallModal('green')">?</div>
+                <!-- كرة صفراء -->
+                <div id="ball-yellow" class="hacker-ball ball-yellow" onclick="openBallModal('yellow')">?</div>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-gray-400 text-xs font-hacker mb-2">STATUS: <span id="balls-status">0/3 DECRYPTED</span></p>
+            </div>
+
+            <button id="btn-page-5" class="w-full hacker-btn py-4 text-lg opacity-50 cursor-not-allowed" disabled>
+                [ التالي: مغلق ]
+            </button>
+        </div>
+
+        <!-- الصفحة 6: تحدي الأسهم -->
+        <div id="page-6" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30 relative">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; اختراق الجدار الناري</h2>
+            
+            <!-- عداد الوقت والجولات -->
+            <div class="flex justify-between w-full text-xl font-hacker text-green-300 border-b border-green-900 pb-2">
+                <div>المرحلة: <span id="arrow-round">1</span>/5</div>
+                <div>الوقت: <span id="arrow-timer" class="text-red-400">60</span>s</div>
+            </div>
+
+            <p class="text-green-300 text-center text-sm">لديك 5 مراحل. أدخل الأسهم بسرعة قبل انتهاء الوقت!</p>
+
+            <!-- عرض التسلسل المطلوب -->
+            <div id="arrows-container" class="flex justify-center gap-1 my-2 flex-wrap min-h-[60px]">
+                <!-- سيتم توليد الأسهم هنا بالجافاسكريبت -->
+            </div>
+
+            <p id="arrow-feedback" class="text-red-500 font-hacker h-6 text-center hidden">-- SECURITY BREACH DETECTED --</p>
+
+            <!-- أزرار التحكم -->
+            <div class="grid grid-cols-3 gap-2 mt-2">
+                <div></div>
+                <button class="control-btn" onclick="handleArrowInput('up')"><i data-lucide="arrow-up"></i></button>
+                <div></div>
+                <button class="control-btn" onclick="handleArrowInput('left')"><i data-lucide="arrow-left"></i></button>
+                <button class="control-btn" onclick="handleArrowInput('down')"><i data-lucide="arrow-down"></i></button>
+                <button class="control-btn" onclick="handleArrowInput('right')"><i data-lucide="arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- الصفحة 7: البطاقات -->
+        <div id="page-7" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; اختر مكافأتك</h2>
+            <p class="text-green-300 text-center text-sm">اختر بحكمة. يمكنك اختيار بطاقة واحدة فقط.</p>
+
+            <div class="cards-container">
+                
+                <!-- البطاقة 1 -->
+                <div class="hacker-card" onclick="selectCard(1)">
+                    <div class="icon"><i data-lucide="timer-off"></i></div>
+                    <h3>-30 ثانية</h3>
+                    <p>خصم فوري من الوقت</p>
+                </div>
+
+                <!-- البطاقة 2 -->
+                <div class="hacker-card" onclick="selectCard(2)">
+                    <div class="icon"><i data-lucide="skull"></i></div>
+                    <h3>هكر مهكرهم</h3>
+                    <p>30 ثانية</p>
+                </div>
+
+                <!-- البطاقة 3 -->
+                <div class="hacker-card" onclick="selectCard(3)">
+                    <div class="icon"><i data-lucide="lightbulb"></i></div>
+                    <h3>تلميح</h3>
+                    <p>خاصية سرية...</p>
+                </div>
+
+            </div>
+
+            <button id="btn-page-7" class="w-full hacker-btn py-4 text-lg mt-4 hidden">
+                [ التالي ]
+            </button>
+        </div>
+
+        <!-- الصفحة 8: ما بعد البطاقات -->
+        <div id="page-8" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; تم تفعيل الخيار!</h2>
+            <p id="card-result-text" class="text-green-300 text-center text-xl font-bold"></p>
+            <button id="btn-to-final" class="w-full hacker-btn py-4 text-lg mt-8">
+                [ التحدي الأخير ]
+            </button>
+        </div>
+
+        <!-- الصفحة 9: السؤال الأخير (سباقيتي) -->
+        <div id="page-9" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-red-500 font-hacker blink">&gt; تحذير أمني &lt;</h2>
+            <p class="text-green-300 text-center text-lg">اختر الوصف الصحيح للصورة.<br><span class="text-red-400 text-sm font-bold">تحذير: الخطأ يضيف 30 ثانية للوقت!</span></p>
+            
+            <div id="options-container" class="w-full mt-4 space-y-3">
+                <!-- سيتم توليد الخيارات هنا -->
+            </div>
+        </div>
+
+        <!-- صفحة جديدة: إدخال الرقم 135792468 (صفحة 10 مكرر لترتيب الصفحات) -->
+        <div id="page-password-check" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30">
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; الوصول الآمن &lt;</h2>
+            <p class="text-green-300 text-center text-lg">أدخل الرمز الرقمي الذي حصل عليه الفريق للعبور:</p>
+            
+            <input type="number" id="team-password-input" class="hacker-input text-center text-2xl tracking-widest" placeholder=".........">
+            <p id="team-password-error" class="text-red-500 text-sm hidden font-hacker">-- ACCESS DENIED: INVALID CODE --</p>
+            
+            <button id="btn-check-team-password" class="w-full hacker-btn py-4 text-lg mt-4">
+                [ فتح البوابة ]
+            </button>
+        </div>
+
+        <!-- الصفحة 10: الألغاز المتسلسلة -->
+        <div id="page-10" class="page flex flex-col items-center gap-6 p-8 bg-black border-2 border-green-500 rounded-lg shadow-xl shadow-green-500/30 w-full max-w-lg relative">
+            
+            <!-- الزر المخفي للانتقال للنهاية (تم تكبيره وتوضيحه قليلاً للتحكم) -->
+            <div id="secret-exit-btn" class="absolute top-0 left-0 w-20 h-20 cursor-pointer z-[999] flex items-center justify-center opacity-0 hover:opacity-10 transition-opacity" title="???">
+                <span class="text-gray-800 text-xs">.</span>
+            </div>
+
+            <h2 class="text-3xl font-bold text-center text-green-400 font-hacker">&gt; الشفرة المفقودة</h2>
+            <p class="text-green-300 text-center mb-4">أجب عن الأسئلة بالتتابع لفتح الخانات:</p>
+
+            <!-- لغز 1 -->
+            <div id="puzzle-box-1" class="puzzle-box w-full">
+                <p class="text-green-400 text-sm mb-2 font-bold">1. الاسم الذي يطلق على تاجر اللؤلؤ في الخليج؟</p>
+                <div class="flex justify-center">
+                    <input type="text" id="puzzle-input-1" class="puzzle-input" maxlength="1" placeholder="?">
+                </div>
+            </div>
+
+            <!-- لغز 2 -->
+            <div id="puzzle-box-2" class="puzzle-box w-full locked">
+                <p class="text-green-400 text-sm mb-2 font-bold">2. الترمَيت هو الاسم العلمي لأي الكائنات؟</p>
+                <div class="flex justify-center">
+                    <input type="text" id="puzzle-input-2" class="puzzle-input" maxlength="2" placeholder="??" disabled>
+                </div>
+            </div>
+
+            <!-- لغز 3 -->
+            <div id="puzzle-box-3" class="puzzle-box w-full locked">
+                <p class="text-green-400 text-sm mb-2 font-bold">3. من صاحب كتاب "الأغاني"؟</p>
+                <div class="flex justify-center">
+                    <input type="text" id="puzzle-input-3" class="puzzle-input" maxlength="2" placeholder="??" disabled>
+                </div>
+            </div>
+
+            <!-- الرسالة النهائية -->
+            <div id="final-msg-container" class="hidden w-full mt-6 p-6 bg-red-900/20 border-2 border-red-600 rounded-xl text-center animate-pulse">
+                <h3 class="text-2xl text-red-500 font-bold font-hacker mb-4">!!! تحذير هام !!!</h3>
+                <p class="text-white text-lg mb-4">لا تفقعوا البلونة الأخيرة كونوا كلمة بالحروف الموجودة.</p>
+                <p class="text-green-400 text-xl font-bold">وانت يا هكر الحق اصحابك نشوفك على خير</p>
+            </div>
+
+        </div>
+
+        <!-- الصفحة 12: النهاية الحقيقية -->
+        <div id="page-12" class="page flex flex-col items-center justify-center gap-10 p-8 bg-black border-4 border-green-600 rounded-2xl shadow-2xl shadow-green-600/50 min-h-[60vh]">
+            <h1 class="text-6xl font-bold text-center text-green-500 font-hacker tracking-wider animate-pulse" style="text-shadow: 0 0 20px #0f0;">
+                اشتقت لك يا مهكر (:
+            </h1>
+            
+            <button id="btn-final-reveal" class="hacker-btn py-6 px-12 text-2xl bg-gray-900 border-2 border-white text-white hover:bg-white hover:text-black hover:border-white transition-all duration-500 transform hover:scale-110">
+                اضغط هنا
+            </button>
+
+            <div id="final-code-reveal" class="hidden flex-col items-center gap-4 animate-bounce">
+                <p class="text-gray-400 text-xl font-hacker">CODE:</p>
+                <p class="text-8xl font-bold text-red-600 font-hacker tracking-[1rem]" style="text-shadow: 0 0 30px red;">
+                    518
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // تهيئة أيقونات Lucide
+        lucide.createIcons();
+
+        // --- نظام الصوت (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(freq, type, duration) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const soundFX = {
+            blip: () => playTone(800, 'square', 0.1),
+            click: () => playTone(600, 'sine', 0.05),
+            error: () => {
+                playTone(150, 'sawtooth', 0.3);
+                setTimeout(() => playTone(100, 'sawtooth', 0.3), 100);
+            },
+            success: () => {
+                playTone(600, 'square', 0.1);
+                setTimeout(() => playTone(800, 'square', 0.1), 100);
+            },
+            win: () => {
+                playTone(500, 'square', 0.1);
+                setTimeout(() => playTone(700, 'square', 0.1), 100);
+                setTimeout(() => playTone(1000, 'square', 0.3), 200);
+            },
+            select: () => {
+                playTone(400, 'triangle', 0.1);
+                setTimeout(() => playTone(600, 'triangle', 0.2), 100);
+            },
+            unlock: () => { // صوت فتح القفل
+                playTone(1200, 'sine', 0.1);
+            }
+        };
+
+
+        // متغيرات الحالة العامة
+        let currentPage = 1;
+        let groupName = '';
+        let hackerName = '';
+        let groupNumber = '';
+        let timerInterval = null; 
+        let secondsElapsed = 0;
+        let currentModalConfirmAction = null;
+
+        // متغيرات المكافآت
+        let selectedCard = 0;
+        let hintActive = false;
+
+        // متغيرات الرمز السري
+        let pinAttempts = 0;
+        const MAX_PIN_ATTEMPTS = 3;
+        const PIN_LOCKOUT_DURATION = 30000; 
+        let pinLockoutTimer = null;
+
+        // متغيرات تحدي الذاكرة
+        const gridCount = 16; // 4x4
+        let memorySequence = [];
+        let userSequence = [];
+        let memoryRound = 1;
+        const maxMemoryRounds = 3;
+        let isMemoryShowing = false;
+
+        // متغيرات تحدي الكور
+        let currentBall = null;
+        const ballSolutions = {
+            'red': { answers: ['درج', 'الدرج', 'سلم', 'السلم'], result: '5' },
+            'green': { answers: ['ثمانية', '8'], result: '1' },
+            'yellow': { answers: ['خمسة', '5'], result: '10' }
+        };
+        const ballStatus = { 'red': false, 'green': false, 'yellow': false };
+
+        const page2Image = document.querySelector('#page-2 img');
+        const page2List = document.querySelector('#page-2 ul');
+
+        const page2Configs = {
+            '1': {
+                img: "https://i.postimg.cc/Vs3YJFtF/football-pitch-wallpaper-1152x720.jpg",
+                listHtml: `
+                    <li>هدف</li>
+                    <li>ملعب</li>
+                    <li>لاعب (أو لاعبين)</li>
+                    <li>يركل (أو يشوت)</li>
+                    <li>مباراة</li>
+                    <li>شبكة أو مرمى</li>
+                    <li>مستطيل</li>
+                    <li>أخضر</li>
+                    <li>كورة</li>
+                    <li>عشب</li>
+                    <li>انجيلة</li>
+                `
+            },
+            '2': {
+                img: "https://i.postimg.cc/Wb3tL4Pj/msbh.jpg",
+                listHtml: `
+                    <li>مسبح</li>
+                    <li>موية</li>
+                    <li>كلور</li>
+                    <li>سباحة</li>
+                    <li>غوص</li>
+                    <li>غرق</li>
+                    <li>عوم</li>
+                    <li>أزرق</li>
+                `
+            },
+            '3': {
+                img: "https://i.postimg.cc/CxmF8p1h/images.jpg",
+                listHtml: `
+                    <li>لعبة</li>
+                    <li>ألعاب</li>
+                    <li>لعب</li>
+                    <li>صالة ألعاب</li>
+                    <li>تنس</li>
+                    <li>تنس طاولة</li>
+                    <li>بينغ بونغ</li>
+                    <li>كرة الطاولة</li>
+                    <li>طاولة</li>
+                    <li>طاولات</li>
+                    <li>مضرب</li>
+                    <li>كرة</li>
+                    <li>فرفيرة</li>
+                `
+            }
+        };
+
+        // متغيرات تحدي الأسهم
+        const arrowSequenceLength = 6;
+        let arrowSequence = [];
+        let currentArrowIndex = 0;
+        let currentArrowRound = 1;
+        const maxArrowRounds = 5;
+        let arrowGameTimeLeft = 60;
+        let arrowGameTimer = null;
+        
+        const arrowTypes = ['up', 'down', 'left', 'right'];
+        const arrowIcons = {
+            'up': 'arrow-up',
+            'down': 'arrow-down',
+            'left': 'arrow-left',
+            'right': 'arrow-right'
+        };
+
+        // خيارات السؤال الأخير
+        const finalOptions = [
+            { text: "طبق سباقيتي عليه كوكب المشتري ونيبتون وكوب الأرض وجوال والسماء أرجوانية", correct: false },
+            { text: "طبق سباقيتي عيله صلصة خضراء وحلزون يجلس فوق ورقة شجر", correct: false },
+            { text: "طبق سباقيتي عليه صلصة زرقاء وكوب المريخ وكوكب الأرض وكوكب زحل وورقة شجر", correct: true },
+            { text: "طبق سباقيتي عليه صلصة زرقاء وكواكب الأرض والمريخ وزحل والمشتري وحلزون فوق الجوال", correct: false },
+            { text: "طبق سباقيتي على صحن ابيض وعليه وسماء زرقاء فاتحة مرصعة بالنجوم وحلزون يأكل من الصحن", correct: false }
+        ];
+
+        // عناصر الواجهة العامة
+        const pages = document.querySelectorAll('.page');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalMessage = document.getElementById('modal-message');
+        const modalYes = document.getElementById('modal-yes');
+        const modalNo = document.getElementById('modal-no');
+        const timerDisplay = document.getElementById('timer-display');
+        const timeEl = document.getElementById('time');
+        const displayGroupName = document.getElementById('display-group-name');
+        const displayHackerName = document.getElementById('display-hacker-name');
+
+        // عناصر تحدي الكور
+        const ballModal = document.getElementById('ball-input-modal');
+        const ballInput = document.getElementById('ball-answer-input');
+        const ballError = document.getElementById('ball-error-msg');
+        const btnSubmitBall = document.getElementById('btn-submit-ball');
+        const btnCancelBall = document.getElementById('btn-cancel-ball');
+
+        // إظهار صفحة محددة
+        function showPage(pageNum) {
+            // handling special named page
+            if (pageNum === 'password-check') {
+                pages.forEach((page) => page.style.display = 'none');
+                document.getElementById('page-password-check').style.display = 'flex';
+                currentPage = 'password-check'; // Update current page
+                window.scrollTo(0, 0);
+                return;
+            }
+
+            soundFX.click(); 
+            
+            // Hide all pages first
+            pages.forEach((page) => page.style.display = 'none');
+            
+            // Show the requested page
+            const targetPage = document.getElementById(`page-${pageNum}`);
+            if (targetPage) {
+                targetPage.style.display = 'flex';
+                currentPage = pageNum; // Update current page
+            }
+
+            window.scrollTo(0, 0); 
+
+            // تشغيل الألعاب حسب الصفحة
+            if (pageNum === 4) initMemoryGame();
+            if (pageNum === 6) initArrowGame();
+            if (pageNum === 7) lucide.createIcons();
+            if (pageNum === 9) renderFinalQuestion();
+            if (pageNum === 10) initPuzzleChain(); 
+        }
+
+        // النوافذ المنبثقة
+        function showModal(message, onConfirm) {
+            modalMessage.textContent = message;
+            currentModalConfirmAction = onConfirm;
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            modalOverlay.classList.add('hidden');
+            currentModalConfirmAction = null;
+        }
+
+        // المؤقت الرئيسي
+        function startTimer() {
+            timerDisplay.classList.remove('hidden');
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                timeEl.textContent = formatTime(secondsElapsed);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 0) seconds = 0;
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        // --- منطق الصفحة الجديدة: إدخال كلمة سر الفريق (135792468) ---
+        document.getElementById('btn-check-team-password').addEventListener('click', () => {
+            const input = document.getElementById('team-password-input');
+            const error = document.getElementById('team-password-error');
+            
+            if (input.value.trim() === '135792468') {
+                soundFX.success();
+                error.classList.add('hidden');
+                showPage(10); // الانتقال لصفحة الألغاز
+            } else {
+                soundFX.error();
+                error.classList.remove('hidden');
+                input.classList.add('border-red-500');
+                setTimeout(() => input.classList.remove('border-red-500'), 1000);
+            }
+        });
+
+        // --- منطق الألغاز المتسلسلة (الصفحة 10) ---
+        function initPuzzleChain() {
+            document.getElementById('puzzle-input-1').value = '';
+            document.getElementById('puzzle-input-2').value = '';
+            document.getElementById('puzzle-input-3').value = '';
+            lockBox(2);
+            lockBox(3);
+            document.getElementById('final-msg-container').classList.add('hidden');
+            document.getElementById('puzzle-input-1').focus();
+        }
+
+        function lockBox(num) {
+            const box = document.getElementById(`puzzle-box-${num}`);
+            const input = document.getElementById(`puzzle-input-${num}`);
+            box.classList.remove('solved');
+            box.classList.add('locked');
+            input.disabled = true;
+        }
+
+        function unlockBox(num) {
+            const box = document.getElementById(`puzzle-box-${num}`);
+            const input = document.getElementById(`puzzle-input-${num}`);
+            box.classList.remove('locked');
+            input.disabled = false;
+            input.focus();
+            soundFX.unlock(); 
+        }
+
+        function markSolved(num) {
+            const box = document.getElementById(`puzzle-box-${num}`);
+            const input = document.getElementById(`puzzle-input-${num}`);
+            box.classList.add('solved');
+            input.disabled = true; 
+            soundFX.success();
+        }
+
+        document.getElementById('puzzle-input-1').addEventListener('input', function() {
+            if (this.value.trim() === 'ط') {
+                markSolved(1);
+                unlockBox(2);
+            }
+        });
+
+        document.getElementById('puzzle-input-2').addEventListener('input', function() {
+            if (this.value.trim() === 'رخ') {
+                markSolved(2);
+                unlockBox(3);
+            }
+        });
+
+        document.getElementById('puzzle-input-3').addEventListener('input', function() {
+            if (this.value.trim() === 'ية') {
+                markSolved(3);
+                showFinalRedMessage();
+            }
+        });
+
+        function showFinalRedMessage() {
+            const msgContainer = document.getElementById('final-msg-container');
+            msgContainer.classList.remove('hidden');
+            soundFX.win(); 
+            // تم إزالة محاولة تحديث الوقت في صفحة غير موجودة، مما يمنع الخطأ
+        }
+        
+        document.getElementById('secret-exit-btn').addEventListener('click', function() {
+            const msgContainer = document.getElementById('final-msg-container');
+            if (!msgContainer.classList.contains('hidden')) {
+                showPage(12); 
+            }
+        });
+
+        // --- منطق الصفحة 12 (النهاية الحقيقية) ---
+        document.getElementById('btn-final-reveal').addEventListener('click', function() {
+            stopTimer(); // هنا يتوقف المؤقت النهائي
+            this.style.display = 'none';
+            const codeReveal = document.getElementById('final-code-reveal');
+            codeReveal.classList.remove('hidden');
+            codeReveal.style.display = 'flex'; 
+            soundFX.win();
+        });
+
+
+        // --- منطق السؤال الأخير (الصفحة 9) ---
+        function renderFinalQuestion() {
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            const shuffledOptions = [...finalOptions].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn font-hacker';
+                btn.textContent = option.text;
+                btn.onclick = () => handleFinalAnswer(btn, option.correct);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleFinalAnswer(btn, isCorrect) {
+            if (btn.disabled) return; 
+
+            if (isCorrect) {
+                soundFX.win();
+                btn.classList.add('correct');
+                const allBtns = document.querySelectorAll('.option-btn');
+                allBtns.forEach(b => b.disabled = true);
+                
+                setTimeout(() => {
+                    document.getElementById('info-modal').classList.remove('hidden');
+                }, 1000);
+            } else {
+                soundFX.error();
+                btn.classList.add('wrong');
+                btn.disabled = true;
+                
+                secondsElapsed += 30;
+                timeEl.textContent = formatTime(secondsElapsed);
+                
+                document.body.classList.add('flash-error');
+                timeEl.classList.add('text-red-500');
+                setTimeout(() => {
+                    document.body.classList.remove('flash-error');
+                    timeEl.classList.remove('text-red-500');
+                }, 500);
+            }
+        }
+
+        // --- منطق زر الانتقال في نافذة المعلومات (تعديل للانتقال لصفحة الباسورد) ---
+        document.getElementById('btn-info-next').addEventListener('click', () => {
+            document.getElementById('info-modal').classList.add('hidden');
+            showPage('password-check'); // الانتقال للصفحة الجديدة
+        });
+
+        // --- منطق زر الانتقال في نافذة تمهيد الجدار الناري ---
+        document.getElementById('btn-start-firewall').addEventListener('click', () => {
+            document.getElementById('pre-firewall-modal').classList.add('hidden');
+            showPage(6); // الانتقال الفعلي لصفحة الأسهم
+        });
+
+
+        // --- منطق البطاقات (الصفحة 7) ---
+        function selectCard(cardId) {
+            if (selectedCard !== 0) return; 
+
+            soundFX.select();
+            selectedCard = cardId;
+
+            let message = "";
+            if (cardId === 1) message = "هل تختار خصم 30 ثانية؟";
+            if (cardId === 2) message = "هل تختار هكر مهكرهم 30 ثانية؟";
+            if (cardId === 3) message = "هل تختار التلميح؟";
+
+            showModal(message, () => {
+                applyCardEffect(cardId);
+            });
+        }
+
+        function applyCardEffect(cardId) {
+            const resultText = document.getElementById('card-result-text');
+            
+            if (cardId === 1) {
+                secondsElapsed -= 30;
+                if (secondsElapsed < 0) secondsElapsed = 0;
+                timeEl.textContent = formatTime(secondsElapsed);
+                timeEl.classList.add('text-white');
+                setTimeout(() => timeEl.classList.remove('text-white'), 500);
+                resultText.textContent = "تم خصم 30 ثانية من الوقت!";
+            } else if (cardId === 2) {
+                resultText.textContent = "تم تفعيل: هكر مهكرهم (30 ثانية)";
+            } else if (cardId === 3) {
+                hintActive = true;
+                resultText.textContent = "تم تفعيل خاصية التلميح";
+            }
+
+            showPage(8);
+        }
+        
+        modalNo.addEventListener('click', () => {
+            if (currentPage === 7) {
+                selectedCard = 0; 
+            }
+            hideModal();
+        });
+
+
+        // --- منطق تحدي الذاكرة (الصفحة 4) ---
+        function initMemoryGame() {
+            const gridContainer = document.getElementById('memory-grid');
+            gridContainer.innerHTML = '';
+            for(let i=0; i<gridCount; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('memory-cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleMemoryClick(i));
+                gridContainer.appendChild(cell);
+            }
+            
+            memoryRound = 1;
+            document.getElementById('memory-round').textContent = memoryRound;
+            document.getElementById('btn-start-memory').style.display = 'block';
+            document.getElementById('memory-msg').textContent = 'اضغط زر البدء';
+        }
+
+        document.getElementById('btn-start-memory').addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            document.getElementById('btn-start-memory').style.display = 'none';
+            startMemoryRound();
+        });
+
+        async function startMemoryRound() {
+            isMemoryShowing = true;
+            userSequence = [];
+            document.getElementById('memory-msg').textContent = 'راقب النمط...';
+            
+            const count = 3 + memoryRound;
+            memorySequence = [];
+            
+            for(let i=0; i<count; i++) {
+                const rand = Math.floor(Math.random() * gridCount);
+                memorySequence.push(rand);
+            }
+
+            const cells = document.querySelectorAll('.memory-cell');
+            for(const index of memorySequence) {
+                await new Promise(r => setTimeout(r, 500)); 
+                soundFX.blip(); 
+                cells[index].classList.add('active');
+                await new Promise(r => setTimeout(r, 600)); 
+                cells[index].classList.remove('active');
+            }
+
+            isMemoryShowing = false;
+            document.getElementById('memory-msg').textContent = 'كرر النمط الآن!';
+            document.getElementById('memory-msg').classList.add('text-green-400');
+        }
+
+        function handleMemoryClick(index) {
+            if (isMemoryShowing) return;
+            
+            soundFX.click(); 
+            const cells = document.querySelectorAll('.memory-cell');
+            
+            userSequence.push(index);
+            cells[index].classList.add('clicked');
+            setTimeout(() => cells[index].classList.remove('clicked'), 200);
+
+            const currentStep = userSequence.length - 1;
+            
+            if (userSequence[currentStep] !== memorySequence[currentStep]) {
+                soundFX.error(); 
+                isMemoryShowing = true; 
+                document.getElementById('memory-msg').textContent = 'خطأ! إعادة النمط...';
+                document.getElementById('memory-msg').classList.remove('text-green-400');
+                document.getElementById('memory-msg').classList.add('text-red-500');
+                
+                cells.forEach(c => c.classList.add('error'));
+                setTimeout(() => {
+                    cells.forEach(c => c.classList.remove('error'));
+                    startMemoryRound(); 
+                }, 1000);
+                return;
+            }
+
+            if (userSequence.length === memorySequence.length) {
+                if (memoryRound < maxMemoryRounds) {
+                    soundFX.success(); 
+                    memoryRound++;
+                    document.getElementById('memory-round').textContent = memoryRound;
+                    document.getElementById('memory-msg').textContent = 'أحسنت! استعد للتالي...';
+                    isMemoryShowing = true;
+                    setTimeout(startMemoryRound, 1000);
+                } else {
+                    soundFX.win(); 
+                    document.getElementById('memory-msg').textContent = 'ACCESS GRANTED';
+                    setTimeout(() => showPage(5), 1500);
+                }
+            }
+        }
+
+        // --- منطق تحدي الأسهم (الصفحة 6) ---
+
+        function initArrowGame() {
+            currentArrowRound = 1;
+            arrowGameTimeLeft = 60; // Set initial time
+            document.getElementById('arrow-round').textContent = currentArrowRound;
+            document.getElementById('arrow-timer').textContent = arrowGameTimeLeft;
+            
+            // Clear existing timer if any
+            if (arrowGameTimer) clearInterval(arrowGameTimer);
+            
+            // Start the global timer for this challenge
+            arrowGameTimer = setInterval(() => {
+                arrowGameTimeLeft--;
+                document.getElementById('arrow-timer').textContent = arrowGameTimeLeft;
+                
+                if (arrowGameTimeLeft <= 0) {
+                    soundFX.error();
+                    clearInterval(arrowGameTimer);
+                    showModal("فشل الاختراق! انتهى الوقت. تم إلغاء مرحلة المكافآت.", () => {
+                        showPage(9); 
+                    });
+                }
+            }, 1000);
+
+            startNewArrowRound();
+        }
+
+        // New function to reset rounds without resetting timer
+        function resetArrowProgress() {
+            currentArrowRound = 1;
+            document.getElementById('arrow-round').textContent = currentArrowRound;
+            startNewArrowRound();
+        }
+
+        function startNewArrowRound() {
+            generateArrowSequence();
+            renderArrowSequence();
+            currentArrowIndex = 0;
+            document.getElementById('arrow-feedback').classList.add('hidden');
+            document.getElementById('arrow-round').textContent = currentArrowRound;
+        }
+
+        function generateArrowSequence() {
+            arrowSequence = [];
+            for (let i = 0; i < arrowSequenceLength; i++) {
+                const randomArrow = arrowTypes[Math.floor(Math.random() * arrowTypes.length)];
+                arrowSequence.push(randomArrow);
+            }
+        }
+
+        function renderArrowSequence() {
+            const container = document.getElementById('arrows-container');
+            container.innerHTML = '';
+            arrowSequence.forEach((arrow, index) => {
+                const div = document.createElement('div');
+                div.className = 'arrow-display';
+                div.id = `arrow-seq-${index}`;
+                div.innerHTML = `<i data-lucide="${arrowIcons[arrow]}"></i>`;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+            highlightCurrentArrow();
+        }
+
+        function highlightCurrentArrow() {
+            const allArrows = document.querySelectorAll('.arrow-display');
+            allArrows.forEach((el, idx) => {
+                if (idx === currentArrowIndex) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        function handleArrowInput(inputDirection) {
+            if (currentPage !== 6) return;
+
+            const feedback = document.getElementById('arrow-feedback');
+            const currentArrowEl = document.getElementById(`arrow-seq-${currentArrowIndex}`);
+            
+            if (inputDirection === arrowSequence[currentArrowIndex]) {
+                soundFX.click(); 
+                currentArrowEl.classList.remove('active');
+                currentArrowEl.classList.add('correct');
+                currentArrowIndex++;
+
+                if (currentArrowIndex >= arrowSequence.length) {
+                    if (currentArrowRound < maxArrowRounds) {
+                        soundFX.success(); 
+                        currentArrowRound++;
+                        setTimeout(startNewArrowRound, 300); 
+                    } else {
+                        soundFX.win(); 
+                        clearInterval(arrowGameTimer);
+                        feedback.textContent = "ACCESS GRANTED";
+                        feedback.classList.remove('text-red-500', 'hidden');
+                        feedback.classList.add('text-green-500');
+                        setTimeout(() => {
+                            showPage(7);
+                        }, 1000);
+                    }
+                } else {
+                    highlightCurrentArrow();
+                }
+            } else {
+                soundFX.error(); 
+                feedback.textContent = "CRITICAL ERROR! SYSTEM REBOOT...";
+                feedback.classList.remove('hidden');
+                const allArrows = document.querySelectorAll('.arrow-display');
+                allArrows.forEach(el => el.classList.add('wrong'));
+                setTimeout(() => {
+                    resetArrowProgress(); 
+                }, 800);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (currentPage !== 6) return;
+            switch(e.key) {
+                case 'ArrowUp': handleArrowInput('up'); break;
+                case 'ArrowDown': handleArrowInput('down'); break;
+                case 'ArrowLeft': handleArrowInput('left'); break;
+                case 'ArrowRight': handleArrowInput('right'); break;
+            }
+        });
+
+
+        // --- منطق تحدي الكور (صفحة 5) ---
+        function openBallModal(color) {
+            if (ballStatus[color]) return; 
+            currentBall = color;
+            ballInput.value = '';
+            ballError.classList.add('hidden');
+            ballModal.classList.remove('hidden');
+            ballInput.focus();
+        }
+
+        function closeBallModal() {
+            ballModal.classList.add('hidden');
+            currentBall = null;
+        }
+
+        function checkBallAnswer() {
+            if (!currentBall) return;
+            const userAnswer = ballInput.value.trim().toLowerCase();
+            const correctAnswers = ballSolutions[currentBall].answers;
+            const resultNumber = ballSolutions[currentBall].result;
+            if (correctAnswers.includes(userAnswer)) {
+                soundFX.success();
+                markBallSolved(currentBall, resultNumber);
+                closeBallModal();
+            } else {
+                soundFX.error();
+                ballError.classList.remove('hidden');
+                ballInput.classList.add('border-red-500');
+                setTimeout(() => ballInput.classList.remove('border-red-500'), 1000);
+            }
+        }
+
+        function markBallSolved(color, number) {
+            ballStatus[color] = true;
+            const ballEl = document.getElementById(`ball-${color}`);
+            ballEl.textContent = number;
+            ballEl.classList.add('ball-solved');
+            checkAllBallsSolved();
+        }
+
+        function checkAllBallsSolved() {
+            const solvedCount = Object.values(ballStatus).filter(s => s).length;
+            document.getElementById('balls-status').textContent = `${solvedCount}/3 DECRYPTED`;
+            if (solvedCount === 3) {
+                const btnNext = document.getElementById('btn-page-5');
+                btnNext.disabled = false;
+                btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnNext.textContent = '[ تم فك التشفير - التالي ]';
+                btnNext.classList.add('animate-pulse');
+            }
+        }
+
+        // --- منطق الصفحات السابقة ---
+        function setupPinInputs(groupClass) {
+             const inputs = document.querySelectorAll(`.${groupClass}`);
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (input.value.length === 1 && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                    if (index === inputs.length - 1 && input.value.length === 1) {
+                        checkPinCode();
+                    }
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+        }
+        
+        function checkPinCode() {
+            if (pinLockoutTimer) return; 
+            const inputs = document.querySelectorAll('.pin-group-1');
+            const pin = Array.from(inputs).map(i => i.value).join('');
+            const errorEl = document.getElementById('pin-error-3');
+            const lockoutBtn = document.getElementById('btn-lockout-3');
+            
+            if (pin === '417') {
+                soundFX.success();
+                errorEl.classList.add('hidden');
+                pinAttempts = 0;
+                inputs.forEach(input => input.value = '');
+                showPage(4); 
+            } else {
+                soundFX.error();
+                pinAttempts++;
+                inputs.forEach(input => input.value = ''); 
+                inputs[0].focus(); 
+                if (pinAttempts >= MAX_PIN_ATTEMPTS) {
+                    errorEl.innerHTML = `-- SYSTEM LOCKED -- <br> الرجاء الانتظار 30 ثانية`;
+                    errorEl.classList.remove('hidden');
+                    lockoutBtn.classList.remove('hidden');
+                    setPinInputsDisabled(true);
+                    let secondsLeft = PIN_LOCKOUT_DURATION / 1000;
+                    lockoutBtn.textContent = `النظام مقفل... (${secondsLeft} ث)`;
+                    pinLockoutTimer = setInterval(() => {
+                        secondsLeft--;
+                        if (secondsLeft > 0) {
+                            lockoutBtn.textContent = `النظام مقفل... (${secondsLeft} ث)`;
+                        } else {
+                            clearInterval(pinLockoutTimer);
+                            pinLockoutTimer = null;
+                            pinAttempts = 0;
+                            setPinInputsDisabled(false);
+                            errorEl.classList.add('hidden');
+                            lockoutBtn.classList.add('hidden');
+                            inputs[0].focus();
+                        }
+                    }, 1000);
+                } else {
+                    errorEl.innerHTML = `--ACCESS DENIED-- (المحاولة ${pinAttempts} من ${MAX_PIN_ATTEMPTS})`;
+                    errorEl.classList.remove('hidden');
+                }
+            }
+        }
+        
+        function setPinInputsDisabled(isDisabled) {
+            const inputs = document.querySelectorAll('.pin-group-1');
+            inputs.forEach(input => {
+                input.disabled = isDisabled;
+                if (isDisabled) {
+                    input.classList.add('bg-gray-700', 'opacity-50', 'cursor-not-allowed');
+                } else {
+                    input.classList.remove('bg-gray-700', 'opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        document.getElementById('btn-page-1').addEventListener('click', () => {
+            const groupNameInput = document.getElementById('group-name');
+            const hackerNameInput = document.getElementById('hacker-name');
+            const groupNumberSelect = document.getElementById('group-number');
+            const hasEmptyName = groupNameInput.value.trim() === '' || hackerNameInput.value.trim() === '';
+            const hasNoGroupNumber = groupNumberSelect.value === '';
+
+            if (hasEmptyName || hasNoGroupNumber) {
+                document.getElementById('name-error').classList.remove('hidden');
+            } else {
+                soundFX.click();
+                document.getElementById('name-error').classList.add('hidden');
+                groupName = groupNameInput.value.trim();
+                hackerName = hackerNameInput.value.trim();
+                groupNumber = groupNumberSelect.value;
+                displayGroupName.textContent = groupName + ' - مجموعة ' + groupNumber;
+                displayHackerName.textContent = hackerName;
+                const cfg = page2Configs[groupNumber];
+                if (cfg && page2Image && page2List) {
+                    page2Image.src = cfg.img;
+                    page2List.innerHTML = cfg.listHtml;
+                }
+                showPage(2);
+                startTimer(); 
+            }
+        });
+
+        document.getElementById('btn-page-2').addEventListener('click', () => {
+            showModal('هل أنت متأكد أن الفريق وصل؟ لا يمكنك الرجوع.', () => { showPage(3); });
+        });
+
+        document.getElementById('btn-page-7').addEventListener('click', () => {
+            showPage(8);
+        });
+
+        document.getElementById('btn-to-final').addEventListener('click', () => {
+            showPage(9);
+        });
+
+        btnSubmitBall.addEventListener('click', checkBallAnswer);
+        btnCancelBall.addEventListener('click', closeBallModal);
+        
+        // تحديث زر الصفحة 5 لفتح النافذة الجديدة بدلاً من الصفحة 6 مباشرة
+        document.getElementById('btn-page-5').addEventListener('click', () => { 
+            document.getElementById('pre-firewall-modal').classList.remove('hidden');
+        });
+
+        setupPinInputs('pin-group-1');
+
+        modalYes.addEventListener('click', () => {
+            if (currentModalConfirmAction) currentModalConfirmAction();
+            hideModal();
+        });
+
+        showPage(1); 
+    </script>
+</body>
+</html>
